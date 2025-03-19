@@ -1,15 +1,12 @@
 'use client'
 
-import {useEffect, useRef, useState} from "react";
-import {Stack, Container, Paper, Typography, Grid2 as Grid, TextField, FormControl, InputLabel, Select, MenuItem, Button, Divider} from "@mui/material";
+import {ChangeEvent} from "react";
+import {Stack, Container, Paper, Typography, Grid2 as Grid, TextField, FormControl, InputLabel, Select, MenuItem, Button, Divider, FormHelperText} from "@mui/material";
 import {DatePicker} from "@mui/x-date-pickers";
-import { useForm } from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 
 export default function CadPage(){
-    const [cepState, setCepState] = useState<null | string>(null)
-
-    const { register, handleSubmit, watch, formState: { errors } } = useForm();
-    const onSubmit = (data: object) => console.log(data);
+    const { register, control} = useForm();
 
     return(
         <Container maxWidth={'md'} sx={{ py: 4 }}>
@@ -42,6 +39,7 @@ export default function CadPage(){
                                 fullWidth
                                 variant="outlined"
                                 placeholder="Digite seu nome"
+                                {...register('fullname')}
                             />
                         </Grid>
 
@@ -52,22 +50,52 @@ export default function CadPage(){
                                 variant="outlined"
                                 type={'number'}
                                 placeholder="somente numeros"
+                                {...register('identify')}
                             />
                         </Grid>
 
                         <Grid size={{xs:12, md: 6}}>
-                            <DatePicker label={'Data de nascimento'} sx={{width:'100%'}}/>
+                            <Controller
+                                name="birthdate"
+                                control={control}
+                                render={({ field, fieldState: { error } }) => (
+                                    <DatePicker
+                                        label="Data de nascimento"
+                                        sx={{ width: '100%' }}
+                                        {...field}
+                                        slotProps={{ textField: { error: !!error, helperText: error?.message }}}
+                                    />
+                                )}
+                            />
                         </Grid>
 
                         <Grid size={{xs:12, md: 6}}>
                             <FormControl fullWidth>
                                 <InputLabel>Selecione seu gênero</InputLabel>
-                                <Select label="gênero">
-                                    <MenuItem>Selecione seu gênero</MenuItem>
-                                    <MenuItem>Masculino</MenuItem>
-                                    <MenuItem>Feminino</MenuItem>
-                                    <MenuItem>Prefiro nâo dizer</MenuItem>
-                                </Select>
+                                <Controller
+                                    name="gender"
+                                    control={control}
+                                    rules={{
+                                        validate: (value) =>
+                                            value !== 'selecione seu genero' || 'Por favor, selecione um gênero válido',
+                                    }}
+                                    render={({ field, fieldState:{error} }) => (
+                                        <>
+                                            <Select
+                                                label="Selecione seu gênero"
+                                                {...field}
+                                                error={!!error}
+                                                value={field.value || 'selecione seu genero'}
+                                            >
+                                                <MenuItem value="selecione seu genero">Selecione seu gênero</MenuItem>
+                                                <MenuItem value="masculino">Masculino</MenuItem>
+                                                <MenuItem value="feminino">Feminino</MenuItem>
+                                                <MenuItem value="prefiro-nao-dizer">Prefiro não dizer</MenuItem>
+                                            </Select>
+                                            {error && <FormHelperText>{error.message}</FormHelperText>}
+                                        </>
+                                    )}
+                                />
                             </FormControl>
                         </Grid>
 
@@ -81,6 +109,7 @@ export default function CadPage(){
                                 type={'email'}
                                 variant="outlined"
                                 placeholder="seu@email.com"
+                                {...register('email')}
                             />
                         </Grid>
 
@@ -91,6 +120,7 @@ export default function CadPage(){
                                 variant="outlined"
                                 fullWidth
                                 placeholder="Com DDD e somente numeros"
+                                {...register('phone-number')}
                             />
                         </Grid>
 
@@ -102,7 +132,18 @@ export default function CadPage(){
                                 fullWidth
                                 variant="outlined"
                                 placeholder="Apenas digitos"
-                                onChange={(e) => {setCepState(e.target.value)}}
+                                {...register('cep', {
+                                    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                                        const value = e.target.value;
+                                        if (value.length === 8) {
+                                            console.info('CEP:', value);
+                                        }
+                                    },
+                                    pattern: {
+                                        value: /^\d{8}$/,
+                                        message: 'O CEP deve conter exatamente 8 dígitos',
+                                    },
+                                })}
                             />
                         </Grid>
 
