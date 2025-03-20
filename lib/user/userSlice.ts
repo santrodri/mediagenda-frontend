@@ -2,7 +2,7 @@ import Userinterface from "@/interfaces/Userinterface";
 import {createSlice} from "@reduxjs/toolkit";
 
 const initialState: Userinterface = {
-    theme: 'light'
+    theme: 'dark'
 }
 
 export const userSlice = createSlice({
