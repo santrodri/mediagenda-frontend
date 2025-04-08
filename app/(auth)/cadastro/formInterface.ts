@@ -1,4 +1,5 @@
 export interface FormCadInterface {
+    avatar: File
     fullname: string
     identify: string
     birthdate: string

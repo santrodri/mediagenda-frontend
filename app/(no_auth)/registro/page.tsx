@@ -1,18 +1,71 @@
 'use client'
+import {useEffect, useState} from "react";
+import { debounce } from '@mui/material/utils'
 
-import {Button, Container, Divider, Grid2 as Grid, Paper, Stack, TextField, Typography} from "@mui/material";
-import {Controller, useForm} from "react-hook-form";
+import {
+    Button,
+    Container,
+    Divider,
+    Grid2 as Grid, IconButton, InputAdornment,
+    LinearProgress,
+    Paper,
+    Stack,
+    TextField,
+    Typography
+} from "@mui/material";
+import {
+    Visibility as VisibilityIcon,
+    VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material'
+
+import {useForm} from "react-hook-form";
+
+
 import FormResInterface from "@/app/(no_auth)/registro/formResInterface";
-import {PatternFormat} from "react-number-format";
+
 
 
 export default function Register(){
-    const { register, control, handleSubmit, formState:{errors}} = useForm<FormResInterface>();
+    const { register, handleSubmit, formState:{errors}, watch} = useForm<FormResInterface>();
+
+    const passwordData = watch('password')
+    const [passwordForce, setPasswordForce] = useState(0)
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const passwordDict:{[key:number]: {color: string, label: string, percent: number}} = {
+        1: {color: 'error', label: 'Senha fraca', percent: 33},
+        2: {color: 'warning', label: 'Senha mediana', percent: 45},
+        3: {color: 'warning', label: 'Senha mediana', percent: 66},
+        4: {color: 'success', label: 'Senha forte', percent: 100},
+    }
+
     function onSubmit(data:object){console.log(data)}
 
+    const handleEffectDebounced = debounce(() => {
+        let score: number = 0
+
+        if (/[A-Z]/.test(passwordData)) score += 1
+        if (/[0-9]/.test(passwordData)) score += 1
+        if (/[^A-Za-z0-9]/.test(passwordData)) score += 1
+        try {
+            if (passwordData.length >= 8) score += 1;
+            // para casos onde a primeiro caracter digitado seja uma letra a barra já começa a contar
+            else if (passwordData.length > 0 && score == 0) score += 1
+        } catch (error) {
+            if (!(error instanceof TypeError)){
+                console.log((error as Error).message)
+            }
+        }
+
+        setPasswordForce(score)
+    },1000)
+
+    useEffect(()=>{
+        handleEffectDebounced()
+    }, [passwordData])
 
     return(
-        <Container maxWidth={"md"} component={'main'} sx={{py:8}}>
+        <Container maxWidth={"sm"} component={'main'} sx={{py:8}}>
             <Stack justifyContent={'center'} alignItems={'center'}>
                 <Paper elevation={3} sx={{width: "100%", p: 4}}>
                     <Typography variant="h4" component="h1" sx={{mb: 1, fontWeight: "bold"}}>
@@ -29,14 +82,20 @@ export default function Register(){
                                 fullWidth
                                 label={'Nome de usuario'}
                                 required
-                                {...register('username')}
+                                {...register('username',{
+                                    required:{value:true, message: 'O campo é nescessario'}
+                                })}
+                                error={!!errors.username}
+                                //@ts-ignore
+                                helperText={errors.username?.message}
                             />
                         </Grid>
 
-                        <Grid size={{xs:12, md: 6}}>
+                        <Grid size={{xs:12}}>
                             <TextField
                                 label="email"
                                 fullWidth
+                                required
                                 type={'email'}
                                 variant="outlined"
                                 placeholder="seu@email.com"
@@ -50,10 +109,11 @@ export default function Register(){
                             />
                         </Grid>
 
-                        <Grid size={{xs:12, md: 6}}>
+                        <Grid size={{xs:12}}>
                             <TextField
                                 label="confirmar email"
                                 fullWidth
+                                required
                                 type={'email'}
                                 variant="outlined"
                                 placeholder="seu@email.com"
@@ -69,48 +129,71 @@ export default function Register(){
                             />
                         </Grid>
 
-                        {/*<Grid size={{xs:12, md: 6}}>*/}
-                        {/*    <Controller*/}
-                        {/*        name={'phone_number'}*/}
-                        {/*        control={control}*/}
-                        {/*        rules={{*/}
-                        {/*            required: {value: true, message: 'O numero de telefone é um campo obrigatório'},*/}
-                        {/*            pattern:{value:/^\(\d{2}\)\s\d{4,5}-\d{4}$/, message: 'O numero de celular não é válido'}*/}
-                        {/*        }}*/}
-                        {/*        render={({field}) => (*/}
-                        {/*            <PatternFormat*/}
-                        {/*                format={'(##) #####-####'}*/}
-                        {/*                customInput={TextField}*/}
-                        {/*                label="Telefone"*/}
-                        {/*                variant="outlined"*/}
-                        {/*                fullWidth*/}
-                        {/*                placeholder="Com DDD e somente numeros"*/}
-                        {/*                value={field.value || ''}*/}
-                        {/*                onValueChange={(values) => {*/}
-                        {/*                    const { formattedValue } = values;*/}
-                        {/*                    field.onChange(formattedValue);*/}
-                        {/*                }}*/}
-                        {/*                error={!!errors.phone_number}*/}
-                        {/*                //@ts-ignore*/}
-                        {/*                helperText={errors.phone_number?.message}*/}
-                        {/*            />*/}
-                        {/*        )}*/}
-                        {/*    />*/}
-                        {/*</Grid>*/}
-
-                        <Grid size={{xs:12, md:6}}>
+                        <Grid size={{xs:12}}>
                             <TextField
                                 fullWidth
+                                required
                                 label={'senha'}
-                                type={'password'}
+                                type={showPassword ? 'text' : 'password'}
+                                {...register('password',{
+                                    required:{value:true, message: 'O campo é nescessario'},
+                                    minLength:{value:8, message:'Defina uma senha com no mínimo 8 digitos'}
+                                })}
+                                error={!!errors.password}
+                                //@ts-ignore
+                                helperText={errors.password?.message}
+                                sx={{pb:1}}
+                                slotProps={{
+                                    input: {
+                                        endAdornment: <InputAdornment position={'end'}>
+                                            <IconButton onClick={() => {setShowPassword(!showPassword)}}>
+                                                {showPassword? <VisibilityOffIcon/> : <VisibilityIcon/>}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    }
+                                }}
                             />
+                            <Stack direction={'row'} alignItems={'center'}>
+                                { passwordForce > 0 &&
+                                    <>
+                                        <LinearProgress
+                                            variant={"determinate"}
+                                            value={passwordDict[passwordForce].percent}
+                                            sx={{ flexGrow: 1, mr: 1 }}
+                                            //@ts-ignore
+                                            color={passwordDict[passwordForce].color}
+                                        />
+                                        <Typography variant={'subtitle2'} color={passwordDict[passwordForce].color}>
+                                            {passwordDict[passwordForce].label}
+                                        </Typography>
+                                    </>
+                                }
+                            </Stack>
                         </Grid>
 
-                        <Grid size={{xs:12, md:6}}>
+                        <Grid size={{xs:12}}>
                             <TextField
                                 fullWidth
+                                required
                                 label={'confirmar senha'}
-                                type={'password'}
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                {...register('confirmPassword',{
+                                    required:{value:true, message: 'O campo é nescessario'},
+                                    validate:(value, formValues) => value === formValues.password || 'As senhas não conincidem'
+                                })}
+                                error={!!errors.confirmPassword}
+                                //@ts-ignore
+                                helperText={errors.confirmPassword?.message}
+
+                                slotProps={{
+                                    input: {
+                                        endAdornment: <InputAdornment position={'end'}>
+                                            <IconButton onClick={() => {setShowConfirmPassword(!showConfirmPassword)}}>
+                                                {showConfirmPassword? <VisibilityOffIcon/> : <VisibilityIcon/>}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    }
+                                }}
                             />
                         </Grid>
 

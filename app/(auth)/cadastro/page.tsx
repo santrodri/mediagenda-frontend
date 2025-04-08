@@ -1,6 +1,6 @@
 'use client'
 
-import {useRef, useState} from "react";
+import {ChangeEvent, useRef, useState} from "react";
 import {
     Stack,
     Container,
@@ -14,13 +14,15 @@ import {
     MenuItem,
     Button,
     Divider,
-    FormHelperText,
+    FormHelperText, Avatar, IconButton, Input,
 } from "@mui/material";
 
 import {DatePicker} from "@mui/x-date-pickers";
 import {Controller, useForm} from "react-hook-form";
 import { PatternFormat } from 'react-number-format';
+
 import {FormCadInterface} from '@/app/(auth)/cadastro/formInterface'
+import {getDataImage} from "@/app/utils";
 
 export default function CadPage(){
     const { register, control, handleSubmit, formState:{errors}, watch} = useForm<FormCadInterface>({
@@ -29,17 +31,20 @@ export default function CadPage(){
         }
     });
     const maxLength = 500
-    const steps = ['Preencha seus dados pessoais', 'Cadastro do usuário']
     const numCaractersOfPersonStatus = watch('person_status')
+    const [avatarFile, setAvatarFile] = useState<undefined | string>(undefined)
 
     const [shrink, setShrink] = useState(false)
     const stateRef = useRef<HTMLInputElement>(null);
     const localeRef = useRef<HTMLInputElement>(null);
     const cityRef = useRef<HTMLInputElement>(null);
     const streetRef = useRef<HTMLInputElement>(null);
+    const inputPhotoRef = useRef<HTMLInputElement>(null);
 
     function getDataOfCep(cep: string){
-        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        const cep_url: string | undefined = process.env.NEXT_PUBLIC_CEP_URL_API
+
+        fetch(`${cep_url}/ws/${cep}/json/`)
             .then(res => {
                 if (!res.ok) throw new Error(res.statusText);
                 return res.json();
@@ -74,15 +79,40 @@ export default function CadPage(){
 
                     <Typography
                         variant="subtitle1"
-
-                        sx={{
-                            mb: 2,
-                        }}
+                        sx={{mb: 2}}
                     >
                         Preencha seus dados pessoais
                     </Typography>
 
                     <Grid container spacing={3} component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
+                        <Grid size={{xs: 12}}>
+                            <Stack justifyContent={'center'} alignItems={'center'}>
+                                <Input
+                                    type={'file'}
+                                    inputRef={inputPhotoRef}
+                                    inputProps={{accept: 'image/*'}}
+                                    style={{'display': 'none'}}
+                                    {...register('avatar')}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                        getDataImage(e.target.files![0])
+                                            .then(data => {setAvatarFile(data)})
+                                            .catch((error)=> {
+                                                setAvatarFile(undefined)
+                                                console.info(error)
+                                            })
+                                    }}
+                                />
+                                <IconButton>
+                                    <Avatar
+                                        src={avatarFile}
+                                        alt={'photo'}
+                                        sx={{ width: 80, height: 80 }}
+                                        onClick={() => {inputPhotoRef.current!.click()}}
+                                    />
+                                </IconButton>
+                            </Stack>
+                        </Grid>
+
                         <Grid size={{xs:12}}>
                             <TextField
                                 label="Nome completo"
@@ -192,7 +222,7 @@ export default function CadPage(){
                                         placeholder="Apenas dígitos"
                                         value={field.value || ''}
                                         onValueChange={(values) => {
-                                            const { formattedValue, value } = values;
+                                            const { formattedValue } = values;
                                             field.onChange(formattedValue);
                                             if (/^\d{5}-\d{3}$/.test(formattedValue)) {
                                                 getDataOfCep(formattedValue);

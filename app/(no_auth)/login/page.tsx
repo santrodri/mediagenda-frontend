@@ -1,4 +1,5 @@
 'use client'
+
 import {useState} from "react";
 import {Box, Container, Paper, Stack, Typography, TextField, InputAdornment, IconButton, Link, Button} from "@mui/material";
 import {Visibility, VisibilityOff} from  '@mui/icons-material'
@@ -70,7 +71,7 @@ export default function Home() {
                             />
 
                             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-                                <Link href="#" style={{ textDecoration: "none" }}>
+                                <Link href="/relembrar_senha" style={{ textDecoration: "none" }}>
                                     <Typography variant="body2" color="primary">
                                         Esqueceu a senha?
                                     </Typography>
@@ -84,7 +85,7 @@ export default function Home() {
                             <Box sx={{ textAlign: "center", mt: 2 }}>
                                 <Typography variant="body2" color="text.secondary">
                                     Não tem uma conta?{" "}
-                                    <Link href="#" style={{ textDecoration: "none" }}>
+                                    <Link href="/registro" style={{ textDecoration: "none" }}>
                                         <Typography component="span" variant="body2" color="primary" fontWeight={600}>
                                             Cadastre-se agora
                                         </Typography>
